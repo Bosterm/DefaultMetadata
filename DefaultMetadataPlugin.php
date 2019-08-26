@@ -18,12 +18,12 @@ class DefaultMetadataPlugin extends Omeka_Plugin_AbstractPlugin
     protected $_hooks = array(
         'install',
         'uninstall',
-		'admin_footer',
-		'define_routes',
-		'config',
-        'config_form',
-		'define_acl',
-		'after_delete_element'
+	'admin_footer',
+	'define_routes',
+	'config',
+	'config_form',
+	'define_acl',
+	'after_delete_element'
 	);
 	
 	// Define filter to add to the admin menu
@@ -38,10 +38,10 @@ class DefaultMetadataPlugin extends Omeka_Plugin_AbstractPlugin
 		$db = $this->_db;
         $sql = "            
             CREATE TABLE IF NOT EXISTS `$db->DefaultMetadataValues` (
-            `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-			`element_id` int(10) UNSIGNED NOT NULL,
-			`html` tinyint(4) NOT NULL DEFAULT '0',
-			`text` mediumtext COLLATE utf8_unicode_ci NOT NULL,
+		`id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+		`element_id` int(10) UNSIGNED NOT NULL,
+		`html` tinyint(4) NOT NULL DEFAULT '0',
+		`text` mediumtext COLLATE utf8_unicode_ci NOT NULL,
               PRIMARY KEY (`id`)
             ) ENGINE=InnoDB ; ";
         $db->query($sql);
@@ -52,7 +52,7 @@ class DefaultMetadataPlugin extends Omeka_Plugin_AbstractPlugin
     **/
     public function hookUninstall()
     {
-		$db = $this->_db;
+	$db = $this->_db;
         $sql = "DROP TABLE IF EXISTS `$db->DefaultMetadataValues`; ";
         $db->query($sql);
     }
