@@ -10,9 +10,12 @@ All Dublin Core fields have been included, even though the metadata standard rec
 
 Super users can configure the plugin to also allow admin users to add or edit default values in addition to super users.
 
+This plugin is an expanded version of the [DefaultDC] plugin by Eric Weig.
+
 ## License
 This software on this site is provided "as-is," without any express or implied warranty. In no event shall the creators be held liable for any damages arising from the use of the software.
 
 [Default Metadata]: https://github.com/Bosterm/DefaultMetadata
 [CSV imports]: https://omeka.org/classic/plugins/CsvImport/
 [Omeka API]: https://omeka.readthedocs.io/en/latest/Reference/api/
+[DefaultDC]: https://github.com/libmanuk/DefaultDC
