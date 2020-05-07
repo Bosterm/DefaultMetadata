@@ -2,7 +2,7 @@
 /**
  * Default Metadata
  * 
- * @copyright Copyright 2019 Ben Ostermeier and Eric C. Weig
+ * @copyright Copyright 2019, 2020 Ben Ostermeier and Eric C. Weig
  * @license http://opensource.org/licenses/MIT MIT
  */
 
@@ -59,7 +59,7 @@ class DefaultMetadata_IndexController extends Omeka_Controller_AbstractActionCon
 	/**
      * Get all default values in the database, uses the database record's id as the index
 	**/
-	private function _getAllValues() {
+	private function _getAllValuesDatabaseIndex() {
 		$defaultValues = $this->_helper->db->getTable('DefaultMetadataValue')->findAll();
 		$indexed = array();
         foreach ($defaultValues as $defaultValue) {
@@ -73,11 +73,74 @@ class DefaultMetadata_IndexController extends Omeka_Controller_AbstractActionCon
 	**/
 	private function _oldValue($value, $oldValues) {
 		foreach($oldValues as $oldValue) {
-			if($value->element_id == $oldValue['element_id']) {
+			if(($value->element_id == $oldValue['element_id']) && ($value->input_order == $oldValue['input_order'])) {
 				return $oldValue;
 			}
 		}		
 		return false;
+	}
+	
+	/**
+     * Gets all values with a particular element ID, returns a new array
+	**/
+	private function _allElementValues($elementID, $elements) {
+		$elementValues = array();
+		
+		foreach($elements as $element) {
+			if($element['id'] == $elementID) {
+				array_push($elementValues, $element);
+			}
+		}
+		return $elementValues;
+	}
+	
+	/**
+     * Creates html input for the element field
+	**/
+	private function _field($elements, $isMultiInput) {
+		$form = '<div class="field" id="element-' . $elements[0]['id'] . '">'; 
+		$form .= '<div class="two columns alpha">';
+		$form .= '<label>' . __($elements[0]['name']) . '</label>'; 
+		$form .= '<button name="add_element_' . $elements[0]['id'] . '" id="add_element_' . $elements[0]['id'] . '" type="button" value="Add Input" class="add-element">Add Input</button>';
+		$form .= '</div>';
+		$form .= '<div class="inputs five columns omega">';
+		$form .= '<p class="explanation">' . __($elements[0]['description']) . '</p>';
+		$form .= $this->_inputBlock($elements, $isMultiInput);
+		$form .= '</div>';
+		$form .= '</div>';
+		
+		return $form;
+	}
+	
+	/**
+     * Creates html for each input
+	**/
+	private function _inputBlock($elements, $isMultiInput) {
+		$form = "";
+		foreach($elements as $element) {
+			if(is_null($element['input_order'])) { // for elements without previous default metadata, the input order will be null. we need it to be zero.
+				$element['input_order'] = 0;
+			}
+			$form .= '<div class="input-block">';
+			$form .= '<div class="input">';
+			$form .= '<textarea name="Elements[' . $element['id'] . '][' . $element['input_order'] . '][text]" id="Elements-' . $element['id'] . '-'. $element['input_order'] . '-text" rows="3" cols="50">' . $element['text'] . '</textarea>';
+			$form .= '</div>';
+			if($isMultiInput) {
+				$form .= '<div class="controls">';
+				$form .= '<input type="submit" name="" value="Remove" class="remove-element red button">';
+				$form .= '</div>';
+			}
+			$form .= '<label class="use-html">Use HTML';
+			$form .= '<input type="hidden" name="Elements[' . $element['id'] . '][' . $element['input_order'] . '][html]" value="0">';
+			$form .= '<input type="checkbox" name="Elements[' . $element['id'] . '][' . $element['input_order'] . '][html]" id="Elements-' . $element['id'] . '-'. $element['input_order'] . '-html" value="1" class="use-html-checkbox" ';
+			if($element['html']) { 
+				$form .= 'checked="checked"';
+			}
+			$form .= '>';
+			$form .= '</label>';
+			$form .= '</div>';
+		}
+		return $form;
 	}
 	
 	/**
@@ -87,6 +150,7 @@ class DefaultMetadata_IndexController extends Omeka_Controller_AbstractActionCon
 	{ 
 		$form = "";
 		$allElementSets = $this->_getAllElementSets();
+		$ignoreElements = array();
 		foreach ($allElementSets as $elementSet) { //traverse each element set to create a form group for each
 			if($elementSet['name'] != "Item Type Metadata") { // start with non item type metadata
 				
@@ -99,29 +163,13 @@ class DefaultMetadata_IndexController extends Omeka_Controller_AbstractActionCon
 				
 				$elements = $this->_getAllElementsInSet($elementSet['id']);
 				foreach ($elements as $element) { //traverse each element in the set to create a form input for each in the form group
-					$form .= '<div class="field" id="element-' . $element['id'] . '">'; 
-					$form .= '<div class="two columns alpha">';
-					$form .= '<label>' . __($element['name']) . '</label>'; 
-					// add input will go here
-					$form .= '</div>';
-					$form .= '<div class="inputs five columns omega">';
-					$form .= '<p class="explanation">' . __($element['description']) . '</p>';
-					$form .= '<div class="input-block">';
-					$form .= '<div class="input">';
-					$form .= '<textarea name="Elements[' . $element['id'] . '][0][text]" id="Elements-' . $element['id'] . '-0-text" rows="3" cols="50">' . $element['text'] . '</textarea>';
-					$form .= '</div>';
-					// remove input will go here
-					$form .= '<label class="use-html">Use HTML';
-					$form .= '<input type="hidden" name="Elements[' . $element['id'] . '][0][html]" value="0">';
-					$form .= '<input type="checkbox" name="Elements[' . $element['id'] . '][0][html]" id="Elements-' . $element['id'] . '-0-html" value="1" class="use-html-checkbox" ';
-					if($element['html']) { 
-						$form .= 'checked="checked"';
-					} 
-					$form .= '>';
-					$form .= '</label>';
-					$form .= '</div>';
-					$form .= '</div>';
-					$form .= '</div>';
+					$allElementValues = $this->_allElementValues($element['id'], $elements);
+					if ((!in_array($element['id'], $ignoreElements)) && (count($allElementValues) > 1)) { // if the element has a value and has multiple inputs
+						$form .= $this->_field($allElementValues, true);
+						array_push($ignoreElements, $element['id']);
+					} else if (!in_array($element['id'], $ignoreElements)) { 
+						$form .= $this->_field($allElementValues, false);
+					}
 				}
 				$form .= "</fieldset>";
 				$form .= "</div>";
@@ -167,9 +215,9 @@ class DefaultMetadata_IndexController extends Omeka_Controller_AbstractActionCon
 	**/
     private function _processPageForm($csrf)
     {
-		$oldValues = $this->_getAllValues();
+		$oldValues = $this->_getAllValuesDatabaseIndex();
         if ($this->getRequest()->isPost()) { // if the user is submitting the form
-            $values = $_POST['Elements'];
+			$values = $_POST['Elements'];
 			if ($this->_autoCsrfProtection && !$csrf->isValid($_POST)) {
                 $this->_helper->_flashMessenger(__('There was an error on the form. Please try again.'), 'error');
                 return;
@@ -177,6 +225,7 @@ class DefaultMetadata_IndexController extends Omeka_Controller_AbstractActionCon
 			if (!("" == $_POST['item_type_id']) ) { // if the user assigned an item type, save it with the element id of 0. this will force an update if there is already a saved item type.
 				$value = new DefaultMetadataValue;
 				$value->element_id = 0;
+				$value->input_order = 0;
 				$value->text = $_POST['item_type_id'];
 				$value->html = 0;
 				
@@ -188,37 +237,44 @@ class DefaultMetadata_IndexController extends Omeka_Controller_AbstractActionCon
 					$this->_helper->flashMessenger($e);
 				}
 			}
-			foreach($values as $id => $text) { //iterate over each textbox on the form and save them to the database
-
-				if (!("" == trim($text[0]['text']))) { // if the input has a value
-					
-					$value = new DefaultMetadataValue;
-					$value->element_id = $id;
-					$value->text = $text[0]['text'];
-					$value->html = intval($text[0]['html']);
-
-					$oldValue = $this->_oldValue($value, $oldValues);
-					if(!$oldValue) { // if the value's element does not have a value already in the database, save it
-						try {
-							$value->setPostData($_POST);
-							$value->save();
-						// Catch validation errors.
-						} catch (Omeka_Validate_Exception $e) {
-							$this->_helper->flashMessenger($e);
+			foreach($values as $id => $texts) { //iterate over each textbox on the form and save them to the database
+				
+				$order = 0;
+				foreach($texts as $text) {
+					if (!("" == trim($text['text']))) { // if the input has a value
+						
+						$value = new DefaultMetadataValue;
+						$value->element_id = $id;
+						$value->input_order = $order;
+						$value->text = $text['text'];
+						$value->html = intval($text['html']);
+						
+						
+						$oldValue = $this->_oldValue($value, $oldValues); // check for the corresponding old value
+						
+						if(!$oldValue) { // if the value's element does not have a value already in the database, save it
+							try {
+								$value->setPostData($_POST);
+								$value->save();
+							// Catch validation errors.
+							} catch (Omeka_Validate_Exception $e) {
+								$this->_helper->flashMessenger($e);
+							}
+						} else if (($value->text != $oldValue['text']) || ($value->html != $oldValue['html'])) { //if the value already in the database was changed or if the html boolean is different, update the database record.
+							$value->id = $oldValue['id']; // having the id of an existing database record forces UPDATE instead of INSERT
+							try {
+								$value->setPostData($_POST);
+								$value->save();
+							// Catch validation errors.
+							} catch (Omeka_Validate_Exception $e) {
+								$this->_helper->flashMessenger($e);
+							}
+							unset($oldValues[$oldValue['id']]); // remove the old value from the array, so we don't delete it later
+						} else { // otherwise, the value is unchanged and do not save it to the database
+							unset($oldValues[$oldValue['id']]); // remove the old value from the array, so we don't delete it later
 						}
-					} else if (($value->text != $oldValue['text']) || ($value->html != $oldValue['html'])) { //if the text was changed to the value already in the database or if the html boolean is different, update the database record.
-						$value->id = $oldValue['id']; // having the id of an existing database record forces UPDATE instead of INSERT
-						try {
-							$value->setPostData($_POST);
-							$value->save();
-						// Catch validation errors.
-						} catch (Omeka_Validate_Exception $e) {
-							$this->_helper->flashMessenger($e);
-						}
-						unset($oldValues[$oldValue['id']]); // remove the old value from the array, so we don't delete it later
-					} else { // otherwise, the value is unchanged and do not save it to the database
-						unset($oldValues[$oldValue['id']]); // remove the old value from the array, so we don't delete it later
 					}
+				$order++;
 				}
 			}
 			// delete old values not found in the form

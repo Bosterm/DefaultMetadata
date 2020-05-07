@@ -4,6 +4,5 @@
     </p>
 </div>
 <?php
-//echo $elementText;
 echo $form;
 ?>

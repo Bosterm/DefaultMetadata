@@ -2,7 +2,7 @@
 /**
  * Default Metadata
  * 
- * @copyright Copyright 2019 Ben Ostermeier and Eric C. Weig
+ * @copyright Copyright 2019, 2020 Ben Ostermeier and Eric C. Weig
  * @license http://opensource.org/licenses/MIT MIT
  */
  
@@ -20,7 +20,7 @@ class DefaultMetadataValueTable extends Omeka_Db_Table
 		$db = $this->getDb();
 		
 		//this query joins the elements table and the default values table to get the values already saved and the element name, description, and id to generate the form. records are ordered first by the order field from the elements table, then by the element id. This is the same ordering used on item edit pages.
-		$sql = "SELECT elements.id, elements.name, elements.description, default_values.html, default_values.text FROM " . $db->Element . " as elements left outer JOIN " . $this->getTableName() . " as default_values on elements.id = default_values.element_id WHERE elements.element_set_id =" . $elementSet . " ORDER BY (CASE WHEN elements.order Is NULL THEN 1 ELSE 0 END), elements.order, elements.id ASC";
+		$sql = "SELECT elements.id, elements.name, elements.description, default_values.input_order, default_values.html, default_values.text FROM " . $db->Element . " as elements left outer JOIN " . $this->getTableName() . " as default_values on elements.id = default_values.element_id WHERE elements.element_set_id =" . $elementSet . " ORDER BY (CASE WHEN elements.order Is NULL THEN 1 ELSE 0 END), elements.order, elements.id ASC";
 		
 		return $db->fetchAll($sql);
 	}
@@ -36,7 +36,7 @@ class DefaultMetadataValueTable extends Omeka_Db_Table
 	public function getItemTypeElements() {
 		$db = $this->getDb();
 		
-		$sql = "SELECT default_values.element_id, default_values.html, default_values.text FROM " . $this->getTableName() . " as default_values left outer JOIN " . $db->Element . " as elements ON default_values.element_id = elements.id WHERE elements.element_set_id = 3";
+		$sql = "SELECT default_values.element_id, default_values.html, default_values.input_order, default_values.text FROM " . $this->getTableName() . " as default_values left outer JOIN " . $db->Element . " as elements ON default_values.element_id = elements.id WHERE elements.element_set_id = 3";
 		
 		return $db->fetchAll($sql);
 	}
@@ -44,7 +44,7 @@ class DefaultMetadataValueTable extends Omeka_Db_Table
 	public function getNonItemTypeElements() {
 		$db = $this->getDb();
 		
-		$sql = "SELECT default_values.element_id, default_values.html, default_values.text FROM " . $this->getTableName() . " as default_values left outer JOIN " . $db->Element . " as elements ON default_values.element_id = elements.id WHERE elements.element_set_id <> 3";
+		$sql = "SELECT default_values.element_id, default_values.html, default_values.input_order, default_values.text FROM " . $this->getTableName() . " as default_values left outer JOIN " . $db->Element . " as elements ON default_values.element_id = elements.id WHERE elements.element_set_id <> 3";
 		
 		return $db->fetchAll($sql);
 	}
@@ -71,13 +71,14 @@ class DefaultMetadataValueTable extends Omeka_Db_Table
 	}
 	
 	/**
-     * Get all default values in the database, uses the element id
+     * Get all default values in the database, uses the element id_input order as the array index
 	**/
 	public function getAllValues() {
 		$defaultValues = $this->getDb()->getTable('DefaultMetadataValue')->findAll();
 		$indexed = array();
         foreach ($defaultValues as $defaultValue) {
-            $indexed[$defaultValue->element_id] = $defaultValue;
+			$index = $defaultValue->element_id . "_" . $defaultValue->input_order;
+            $indexed[$index] = $defaultValue;
         }
         return $indexed;
 	}

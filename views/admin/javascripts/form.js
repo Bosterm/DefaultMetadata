@@ -76,4 +76,87 @@ jQuery( document ).ready(function() {
 			}
 		});
 	});
+	
+	elementFormRequest = function (fieldDiv, params, elementFormPartialUri, recordType) {
+		var elementId = fieldDiv.attr('id').replace(/element-/, '');
+        
+        fieldDiv.find('input, textarea, select').each(function () {
+            var element = jQuery(this);
+            // Workaround for annoying jQuery treatment of checkboxes.
+            if (element.is('[type=checkbox]')) {
+                params[this.name] = element.is(':checked') ? '1' : '0';
+            } else {
+                // Make sure TinyMCE saves to the textarea before we read
+                // from it
+                if (element.is('textarea')) {
+                    var mce = tinyMCE.get(this.id);
+                    if (mce) {
+                        mce.save();
+                    }
+                }
+                params[this.name] = element.val();
+            }
+        });
+		
+		recordId = typeof recordId !== 'undefined' ? recordId : 0;
+        
+        params.element_id = elementId;
+        params.record_type = recordType;
+		
+		jQuery.ajax({
+            url: elementFormPartialUri,
+            type: 'POST',
+            dataType: 'html',
+            data: params,
+            success: function (response) {
+                fieldDiv.find('textarea').each(function () {
+                    tinyMCE.EditorManager.execCommand('mceRemoveEditor', false, this.id);
+                });
+                fieldDiv.html(response);
+                fieldDiv.trigger('omeka:elementformload');
+				activateWYSWYG();
+            }
+        });
+	}
+	registerRemoveButtons = function() {
+		// When a remove button is clicked, remove that input from the form.
+		jQuery("#content").on("click", ".remove-element", function (event) {
+			event.preventDefault();
+			var removeButton = jQuery(this);
+
+			// Don't delete the last input block for an element.
+			if (removeButton.parents(".field").find(".input-block").length === 1) {
+				return;
+			}
+
+			if (!confirm('Do you want to delete this input?')) {
+				return;
+			}
+
+			var inputBlock = removeButton.parents(".input-block");
+			inputBlock.find('textarea').each(function () {
+				tinyMCE.EditorManager.execCommand('mceRemoveEditor', false, this.id);
+			});
+			inputBlock.remove();
+
+			// Hide remove buttons for fields with one input.
+			jQuery("div.field").each(function () {
+				var removeButtons = jQuery(this).find(".remove-element");
+				if (removeButtons.length === 1) {
+					removeButtons.hide();
+				}
+			});
+		});
+	}
+	registerAddButtons = function() {
+		// When an add button is clicked, make an AJAX request to add another input.
+		jQuery("#content").on("click", ".add-element", function (event) {
+			event.preventDefault();
+			var fieldDiv = jQuery(this).parents(".field");
+			
+			elementFormRequest(fieldDiv, {add: '1'}, elementFormUrl, "Item");
+		});
+	}
+	registerAddButtons();
+	registerRemoveButtons();
 });

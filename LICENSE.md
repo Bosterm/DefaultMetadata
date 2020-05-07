@@ -1,4 +1,4 @@
-Copyright (c) 2019 Ben Ostermeier and Eric C. Weig
+Copyright (c) 2019, 2020 Ben Ostermeier and Eric C. Weig
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
