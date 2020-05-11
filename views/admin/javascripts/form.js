@@ -102,12 +102,14 @@ jQuery( document ).ready(function() {
         
         params.element_id = elementId;
         params.record_type = recordType;
+		params.record_id = recordId;
 		
 		jQuery.ajax({
             url: elementFormPartialUri,
             type: 'POST',
             dataType: 'html',
             data: params,
+			record_id: recordId,
             success: function (response) {
                 fieldDiv.find('textarea').each(function () {
                     tinyMCE.EditorManager.execCommand('mceRemoveEditor', false, this.id);

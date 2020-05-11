@@ -14,6 +14,7 @@
 class DefaultMetadata_IndexController extends Omeka_Controller_AbstractActionController
 {
 	protected $_autoCsrfProtection = true;
+	
 	/**
      * Set the model class
 	**/
@@ -142,7 +143,7 @@ class DefaultMetadata_IndexController extends Omeka_Controller_AbstractActionCon
 		}
 		return $form;
 	}
-	
+
 	/**
      * Creates the page form
 	**/
@@ -176,8 +177,10 @@ class DefaultMetadata_IndexController extends Omeka_Controller_AbstractActionCon
 			} else { // if item type metadata
 				$item_types = get_records('ItemType', array('sort_field' => 'name'), 1000);
 				$defaultItemType = $this->_helper->db->getTable('DefaultMetadataValue')->getDefaultItemType();
-				$defaultItemTypeId = intval($defaultItemType[0]["text"]);
-			
+				$defaultItemTypeId = 0;
+				if (!empty($defaultItemType)) {
+					$defaultItemTypeId = intval($defaultItemType[0]["text"]);
+				}
 				$form .= '<div id="item-type-metadata-metadata">';
 				$form .= '<h2>' . __($elementSet['name']) . '</h2>';
 				$form .= '<div class="field" id="type-select">';

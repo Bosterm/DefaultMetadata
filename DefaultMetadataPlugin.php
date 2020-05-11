@@ -92,8 +92,8 @@ class DefaultMetadataPlugin extends Omeka_Plugin_AbstractPlugin
 		$defaultValues = $table->getNonItemTypeElements(); //non item type elements
 		$defaultItemTypeValues = $table->getItemTypeElements(); // item type elements
 		$defaultType = $table->getTable('DefaultMetadataValue')->getDefaultItemType();
-		$itemTypeElements = [];
-		$elements = [];
+		$itemTypeElements = array();
+		$elements = array();
 		foreach($defaultValues as $defaultValue) {
 			$elements[$defaultValue['element_id']][] = $defaultValue;
 		}
@@ -104,7 +104,11 @@ class DefaultMetadataPlugin extends Omeka_Plugin_AbstractPlugin
     <script>
 		itemTypeSelect = document.getElementById("item-type");
 		if ((itemTypeSelect.value === "") && <?php echo js_escape(isset($defaultType[0])) ?>) { // if the item has no item type and there is a default item type
-			document.getElementById("item-type").value = <?php echo intval($defaultType[0]["text"]); ?>;
+			document.getElementById("item-type").value = <?php 
+			if (isset($defaultType[0])) {
+				echo intval($defaultType[0]["text"]); 
+			} else echo '""';
+			?>;
 			// we have to do the standard Omeka ajax that generates the item type form.
 			var changeItemTypeUrl = <?php echo js_escape(url("items/change-type")) ?>;
 			jQuery('#change_type').hide();
