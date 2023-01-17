@@ -1,6 +1,8 @@
 # DefaultMetadata
 [Default Metadata] is an Omeka plugin that allows administrators to specify default values for item metadata fields, including Dublin Core and Item Type Metadata fields. Metadata fields are then auto-filled with default values when items are created or edited.
 
+Note: this plugin is for Omeka 2.x and is not currently compatible with Omeka 3.x.
+
 ## Notes
 Super users can set the default value for metadata fields by setting values in the Default Metadata page, which super users can access from the  left-hand navigation of the Admin dashboard. Super users can also set a default Item Type. When users add or edit an item, if a default value has been set and that specific metadata field is blank, the default value will be inserted onto the item edit form. The value is then saved when the item is saved. Users can modify the values for individual items as needed.
 
